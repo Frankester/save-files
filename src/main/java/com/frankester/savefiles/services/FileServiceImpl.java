@@ -39,14 +39,21 @@ public class FileServiceImpl implements FileService {
     @Override
     public File saveFile(RequestFile newFile){
 
-        File file = new File(null,newFile.getName(), newFile.getTypeFile(), newFile.getDescription(),null, null);
+        File file = new File();
+
+        file.setName(newFile.getName());
+        file.setTypeFile(newFile.getTypeFile());
+        file.setDescription(newFile.getDescription());
+
+
         return repo.save(file);
     }
 
     @Override
     public String deleteFile(String idFile) throws FileNotFoundException {
 
-        if(repo.findAll().stream().anyMatch(f -> f.getId().equals(idFile))){
+        boolean exist = repo.findAll().stream().anyMatch(f -> f.getId().equals(idFile));
+        if(!exist){
             throw new FileNotFoundException("File with id: "+ idFile+ " not found");
         }
 

@@ -31,7 +31,7 @@ public class FileController {
     }
 
     @PutMapping(path= "/{idFile}" )
-    public ResponseEntity<Object> getSingleFile(@PathVariable("idFile") String idFile, RequestFile modifiedFile) throws FileNotFoundException {
+    public ResponseEntity<Object> getSingleFile(@PathVariable("idFile") String idFile, @RequestBody RequestFile modifiedFile) throws FileNotFoundException {
 
         File savedFile = service.getOneFile(idFile);
 
@@ -40,5 +40,11 @@ public class FileController {
         savedFile.setDescription(modifiedFile.getDescription());
 
         return ResponseEntity.ok(service.replaceFile(savedFile));
+    }
+
+    @PostMapping
+    public ResponseEntity<Object> saveFile(@RequestBody RequestFile newFile){
+        System.out.println(newFile);
+        return ResponseEntity.ok(service.saveFile(newFile));
     }
 }
