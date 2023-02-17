@@ -29,15 +29,7 @@ public class File {
         this.created_at = LocalDateTime.now();
     }
 
-    @Override
-    public String toString() {
-        return "File{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", typeFile='" + typeFile + '\'' +
-                ", description='" + description + '\'' +
-                ", created_at=" + created_at +
-                ", modified_at=" + modified_at +
-                '}';
-    }
+   public void addModifiedDate(LocalDateTime date){
+        this.modified_at.add(date);
+   }
 }

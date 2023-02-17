@@ -7,6 +7,9 @@ import com.frankester.savefiles.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping(path = "/files")
@@ -15,7 +18,7 @@ public class FileController {
     @Autowired
     FileService service;
 
-    @GetMapping(path = "/")
+    @GetMapping
     public ResponseEntity<Object> getFiles(){
         return ResponseEntity.ok(service.getAllFiles());
     }
@@ -30,7 +33,7 @@ public class FileController {
         return ResponseEntity.ok(service.deleteFile(idFile));
     }
 
-    @PutMapping(path= "/{idFile}" )
+    @PutMapping(path= "/{idFile}")
     public ResponseEntity<Object> getSingleFile(@PathVariable("idFile") String idFile, @RequestBody RequestFile modifiedFile) throws FileNotFoundException {
 
         File savedFile = service.getOneFile(idFile);
@@ -43,8 +46,25 @@ public class FileController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> saveFile(@RequestBody RequestFile newFile){
-        System.out.println(newFile);
-        return ResponseEntity.ok(service.saveFile(newFile));
+    public ResponseEntity<Object> saveFile(@RequestParam("file") MultipartFile file) throws IOException {
+
+        String fileName = file.getOriginalFilename();
+        String typeFileExtension  = file.getOriginalFilename().split("\\.")[1];
+        java.io.File realFile = new java.io.File("C:\\Users\\franc\\IdeaProjects\\savefiles\\uploads\\"+fileName);
+
+        //save the file for uploading
+        file.transferTo(realFile);
+
+        RequestFile reqFileWithMetadata = new RequestFile();
+        reqFileWithMetadata.setFile(realFile);
+        reqFileWithMetadata.setName(fileName);
+        reqFileWithMetadata.setTypeFile(typeFileExtension);
+
+        File metadataFileSaved = service.saveFile(reqFileWithMetadata);
+
+        // delete the file after uploading it
+        realFile.delete();
+
+      return ResponseEntity.ok(metadataFileSaved);
     }
 }
