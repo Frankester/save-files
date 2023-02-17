@@ -1,7 +1,6 @@
 package com.frankester.savefiles.services;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.frankester.savefiles.exceptions.FileNotFoundException;
 import com.frankester.savefiles.models.File;
 import com.frankester.savefiles.models.RequestFile;
@@ -12,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,9 +27,6 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public Page<File> getAllFiles(){
-        /*List<S3ObjectSummary> objects = s3.listObjectsV2(BucketName).getObjectSummaries();
-        objects.forEach(obj -> System.out.println(obj.getKey()));
-*/
         return repo.findAll(Pageable.ofSize(PageSize));
     }
 
@@ -44,7 +39,9 @@ public class FileServiceImpl implements FileService {
             throw new FileNotFoundException("File with id: "+ idFile+ " not found");
         }
 
-        return fileOp.get();
+        File file = fileOp.get();
+        
+        return file;
     }
 
     @Override
@@ -62,14 +59,20 @@ public class FileServiceImpl implements FileService {
     @Override
     public String deleteFile(String idFile) throws FileNotFoundException {
 
-        boolean exist = repo.findAll().stream().anyMatch(f -> f.getId().equals(idFile));
-        if(!exist){
+        Optional<File> fileToDeleteOp = repo.findById(idFile);
+
+        if(fileToDeleteOp.isEmpty()){
             throw new FileNotFoundException("File with id: "+ idFile+ " not found");
         }
 
+        File fileToDelete = fileToDeleteOp.get();
+        String fileName = fileToDelete.getName();
+
+        s3.deleteObject(BucketName, fileName);
+
         repo.deleteById(idFile);
 
-        return "File deleted succesfull";
+        return "File successfully deleted";
     }
 
     @Override
