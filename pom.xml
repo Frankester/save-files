@@ -64,6 +64,10 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<image>
+						<name>frankester/savefiles:${project.artifactId}</name>
+						<pullPolicy>IF_NOT_PRESENT</pullPolicy>
+					</image>
 				</configuration>
 			</plugin>
 		</plugins>
