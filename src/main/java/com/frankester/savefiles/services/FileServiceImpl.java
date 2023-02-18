@@ -39,14 +39,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public File getOneFile(String idFile) throws FileNotFoundException {
-
-        Optional<File> fileOp = repo.findById(idFile);
-
-        if(fileOp.isEmpty()){
-            throw new FileNotFoundException("File with id: "+ idFile+ " not found");
-        }
-
-        File file = fileOp.get();
+        File file = getFile(idFile);
 
         return file;
     }
@@ -66,13 +59,7 @@ public class FileServiceImpl implements FileService {
     @Override
     public String deleteFile(String idFile) throws FileNotFoundException {
 
-        Optional<File> fileToDeleteOp = repo.findById(idFile);
-
-        if(fileToDeleteOp.isEmpty()){
-            throw new FileNotFoundException("File with id: "+ idFile+ " not found");
-        }
-
-        File fileToDelete = fileToDeleteOp.get();
+        File fileToDelete = getFile(idFile);
         String fileName = fileToDelete.getName();
 
         s3.deleteObject(BucketName, fileName);
@@ -91,34 +78,30 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public java.io.File downloadOneFile(String idFile) throws FileNotFoundException, IOException {
+    public byte[] downloadOneFile(String idFile) throws FileNotFoundException, IOException {
 
+        File file = getFile(idFile);
+        String fileName = file.getName();
+
+        S3Object objectFile = s3.getObject(BucketName, fileName);
+
+        return convertObjectToByteArray(objectFile);
+    }
+
+
+    private File getFile(String idFile) throws FileNotFoundException {
         Optional<File> fileOp = repo.findById(idFile);
 
         if(fileOp.isEmpty()){
             throw new FileNotFoundException("File with id: "+ idFile+ " not found");
         }
 
-        File file = fileOp.get();
-        String fileName = file.getName();
-
-        S3Object objectFile = s3.getObject(BucketName, fileName);
-
-        java.io.File realFile = convertObjectToFile(objectFile);
-
-        return realFile;
+        return fileOp.get();
     }
 
-
-    private java.io.File convertObjectToFile(S3Object object) throws IOException {
+    private byte[] convertObjectToByteArray(S3Object object) throws IOException {
         S3ObjectInputStream objectStream = object.getObjectContent();
-        String fileName = object.getKey();
 
-        java.io.File file = new java.io.File("C:\\Users\\franc\\IdeaProjects\\savefiles\\uploads\\"+fileName);
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
-
-        objectStream.transferTo(fileOutputStream);
-
-        return file;
+        return  objectStream.readAllBytes();
     }
 }

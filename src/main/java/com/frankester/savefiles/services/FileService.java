@@ -18,5 +18,5 @@ public interface FileService {
 
     public File replaceFile(File newFile);
 
-    public java.io.File downloadOneFile(String idFile) throws FileNotFoundException, IOException;
+    public byte[] downloadOneFile(String idFile) throws FileNotFoundException, IOException;
 }

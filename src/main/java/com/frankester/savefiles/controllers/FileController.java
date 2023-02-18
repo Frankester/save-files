@@ -5,6 +5,7 @@ import com.frankester.savefiles.models.File;
 import com.frankester.savefiles.models.RequestFile;
 import com.frankester.savefiles.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -29,10 +30,12 @@ public class FileController {
     @GetMapping(path = "/{idFile}")
     public ResponseEntity<Object> getSingleFile(@PathVariable("idFile") String idFile) throws FileNotFoundException, IOException {
 
-        java.io.File fileToDownload = service.downloadOneFile(idFile);
-        String fileName = fileToDownload.getName();
+        byte[] fileToDownload = service.downloadOneFile(idFile);
 
-        Resource fileResource = new FileSystemResource(fileToDownload);
+        Resource fileResource = new ByteArrayResource(fileToDownload);
+
+        File metadataFile = service.getOneFile(idFile);
+        String fileName = metadataFile.getName();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+fileName+"\"")
