@@ -9,14 +9,19 @@ This REST API provides endpoints to store, retrieve, update, and delete files in
 - PUT /files/{idFile}: Updates the stored metadata of an existing file in S3.
 
 ## Configuration
-Before using this API, it is necessary to configure the Amazon S3 credentials in the `~/.aws/credentials` file. The values that should be added to the file are shown below:
-```
-[default]
-aws_access_key_id=ACCESS_KEY_ID
-aws_secret_access_key=SECRET_ACCESS_KEY
+Before using this API, it is necessary to configure the Amazon S3 credentials in the `docker-compose.yml` file. The values that should be added to the file are shown below:
+```yml
+app:
+  ...
+  environment:
+      ...
+      - AWS.ACCESSKEYID=ACCESS_KEY_ID
+      - AWS.SECRETACCESSKEY=SECRET_ACCESS_KEY
+      - AWS.REGION=us-east-1
+      - AWS.BUCKETNAME=BUCKET_NAME
 ````
 
-Replace ACCESS_KEY_ID and SECRET_ACCESS_KEY with the corresponding values from your Amazon S3 account.
+Replace ``ACCESS_KEY_ID``, ``SECRET_ACCESS_KEY`` and ``BUCKET_NAME`` with the corresponding values from your Amazon S3 account.
 
 ## Running Locally
 Clone the project

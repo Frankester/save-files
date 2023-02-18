@@ -1,5 +1,7 @@
 package com.frankester.savefiles;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -14,10 +16,4 @@ public class SavefilesApplication {
 		SpringApplication.run(SavefilesApplication.class, args);
 	}
 
-	@Bean
-	public static AmazonS3 createS3Client(){
-		return AmazonS3Client.builder()
-				.standard().withRegion(Regions.US_EAST_1)
-				.build();
-	}
 }
