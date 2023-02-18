@@ -5,6 +5,8 @@ import com.frankester.savefiles.models.File;
 import com.frankester.savefiles.models.RequestFile;
 import org.springframework.data.domain.Page;
 
+import java.io.IOException;
+
 public interface FileService {
     public Page<File> getAllFiles();
 
@@ -15,4 +17,6 @@ public interface FileService {
     public String deleteFile(String idFile) throws FileNotFoundException;
 
     public File replaceFile(File newFile);
+
+    public java.io.File downloadOneFile(String idFile) throws FileNotFoundException, IOException;
 }

@@ -5,6 +5,9 @@ import com.frankester.savefiles.models.File;
 import com.frankester.savefiles.models.RequestFile;
 import com.frankester.savefiles.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,8 +27,16 @@ public class FileController {
     }
 
     @GetMapping(path = "/{idFile}")
-    public ResponseEntity<Object> getSingleFile(@PathVariable("idFile") String idFile) throws FileNotFoundException {
-        return ResponseEntity.ok(service.getOneFile(idFile));
+    public ResponseEntity<Object> getSingleFile(@PathVariable("idFile") String idFile) throws FileNotFoundException, IOException {
+
+        java.io.File fileToDownload = service.downloadOneFile(idFile);
+        String fileName = fileToDownload.getName();
+
+        Resource fileResource = new FileSystemResource(fileToDownload);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+fileName+"\"")
+                .body(fileResource);
     }
 
     @DeleteMapping(path = "/{idFile}")

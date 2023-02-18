@@ -1,15 +1,22 @@
 package com.frankester.savefiles.services;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.frankester.savefiles.exceptions.FileNotFoundException;
 import com.frankester.savefiles.models.File;
 import com.frankester.savefiles.models.RequestFile;
 import com.frankester.savefiles.repositories.FileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -40,7 +47,7 @@ public class FileServiceImpl implements FileService {
         }
 
         File file = fileOp.get();
-        
+
         return file;
     }
 
@@ -81,5 +88,37 @@ public class FileServiceImpl implements FileService {
 
         //update the file
         return repo.save(newFile);
+    }
+
+    @Override
+    public java.io.File downloadOneFile(String idFile) throws FileNotFoundException, IOException {
+
+        Optional<File> fileOp = repo.findById(idFile);
+
+        if(fileOp.isEmpty()){
+            throw new FileNotFoundException("File with id: "+ idFile+ " not found");
+        }
+
+        File file = fileOp.get();
+        String fileName = file.getName();
+
+        S3Object objectFile = s3.getObject(BucketName, fileName);
+
+        java.io.File realFile = convertObjectToFile(objectFile);
+
+        return realFile;
+    }
+
+
+    private java.io.File convertObjectToFile(S3Object object) throws IOException {
+        S3ObjectInputStream objectStream = object.getObjectContent();
+        String fileName = object.getKey();
+
+        java.io.File file = new java.io.File("C:\\Users\\franc\\IdeaProjects\\savefiles\\uploads\\"+fileName);
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+
+        objectStream.transferTo(fileOutputStream);
+
+        return file;
     }
 }
