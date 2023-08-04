@@ -1,21 +1,19 @@
 package com.frankester.savefiles.services;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.frankester.savefiles.exceptions.FileNotFoundException;
 import com.frankester.savefiles.models.File;
-import com.frankester.savefiles.models.RequestFile;
 import com.frankester.savefiles.repositories.FileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -27,10 +25,12 @@ public class FileServiceImpl implements FileService {
     FileRepository repo;
 
     @Autowired
-    AmazonS3 s3;
+    S3Client s3;
 
     private static final Integer PageSize = 20;
-    private static final String BucketName = "filebucketapp";
+
+    @Value("${aws.bucketName}")
+    private String BucketName ;
 
     @Override
     public Page<File> getAllFiles(){
@@ -45,15 +45,23 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public File saveFile(RequestFile newFile){
-        java.io.File realFile = newFile.getFile();
-        String fileName = newFile.getName();
+    public void saveFile(MultipartFile file) throws IOException{
+        String fileName = file.getOriginalFilename();
 
-        s3.putObject(BucketName,fileName,realFile);
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(this.BucketName)
+                .key(fileName)
+                .build();
 
-        File metadataFile = newFile.toModelFile();
+        this.s3.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
 
-        return repo.save(metadataFile);
+        String fileExtension = fileName.split("\\.")[1];
+
+        File metadataFile = new File();
+        metadataFile.setName(fileName);
+        metadataFile.setTypeFile(fileExtension);
+
+        this.repo.save(metadataFile);
     }
 
     @Override
@@ -62,9 +70,14 @@ public class FileServiceImpl implements FileService {
         File fileToDelete = getFile(idFile);
         String fileName = fileToDelete.getName();
 
-        s3.deleteObject(BucketName, fileName);
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(this.BucketName)
+                .key(fileName)
+                .build();
 
-        repo.deleteById(idFile);
+        this.s3.deleteObject(deleteObjectRequest);
+
+        this.repo.deleteById(idFile);
 
         return "File successfully deleted";
     }
@@ -83,9 +96,14 @@ public class FileServiceImpl implements FileService {
         File file = getFile(idFile);
         String fileName = file.getName();
 
-        S3Object objectFile = s3.getObject(BucketName, fileName);
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(this.BucketName)
+                .key(fileName)
+                .build();
 
-        return convertObjectToByteArray(objectFile);
+        ResponseInputStream<GetObjectResponse> getObjectResponse = s3.getObject(getObjectRequest);
+
+        return getObjectResponse.readAllBytes();
     }
 
 
@@ -95,13 +113,30 @@ public class FileServiceImpl implements FileService {
         if(fileOp.isEmpty()){
             throw new FileNotFoundException("File with id: "+ idFile+ " not found");
         }
+        String fileName = fileOp.get().getName();
+
+        if(!existsFileWithName(fileName)){
+            throw new FileNotFoundException("File with name: "+fileName+" not found");
+        }
 
         return fileOp.get();
     }
 
-    private byte[] convertObjectToByteArray(S3Object object) throws IOException {
-        S3ObjectInputStream objectStream = object.getObjectContent();
+    private boolean existsFileWithName(String filename){
+        try{
+            HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+                    .key(filename)
+                    .bucket(this.BucketName)
+                    .build();
 
-        return  objectStream.readAllBytes();
+            this.s3.headObject(headObjectRequest);
+
+            return true;
+        } catch(S3Exception exception){
+            if(exception.statusCode() == 404){
+                return false;
+            }
+        }
+        return false;
     }
 }

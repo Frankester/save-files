@@ -62,23 +62,8 @@ public class FileController {
     @PostMapping
     public ResponseEntity<Object> saveFile(@RequestParam("file") MultipartFile file) throws IOException {
 
-        String fileName = file.getOriginalFilename();
-        String typeFileExtension  = file.getOriginalFilename().split("\\.")[1];
-        java.io.File realFile = new java.io.File("C:\\Users\\franc\\IdeaProjects\\savefiles\\uploads\\"+fileName);
+        service.saveFile(file);
 
-        //save the file for uploading
-        file.transferTo(realFile);
-
-        RequestFile reqFileWithMetadata = new RequestFile();
-        reqFileWithMetadata.setFile(realFile);
-        reqFileWithMetadata.setName(fileName);
-        reqFileWithMetadata.setTypeFile(typeFileExtension);
-
-        File metadataFileSaved = service.saveFile(reqFileWithMetadata);
-
-        // delete the file after uploading it
-        realFile.delete();
-
-      return ResponseEntity.ok(metadataFileSaved);
+      return ResponseEntity.ok("El archivo" + file.getOriginalFilename() + " se guardado exitosamente.");
     }
 }
